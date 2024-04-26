@@ -1,9 +1,12 @@
 from telegram import ForceReply, Update
 from telegram.ext import ContextTypes
 from telegram import Message
-
-import requests
-
+from data_processing import (
+    get_download_url,
+    download_and_encode_to_base64,
+    detect_faces,
+    save_audio
+)
 
 async def get_file_id(message: Message) -> str:
     """Get the file ID from a Telegram message."""
@@ -19,29 +22,6 @@ async def get_file_id(message: Message) -> str:
     else:
         raise ValueError("Message does not contain supported file type")
 
-
-async def get_download_url(file_id: str, bot_token: str) -> str:
-    """Get the download URL for a file with the given file_id."""
-    try:
-        # Construct the API request URL to get file information
-        file_info_url = f"https://api.telegram.org/bot{bot_token}/getFile?file_id={file_id}"
-        
-        # Send the request to get file information
-        response = requests.get(file_info_url)
-        response.raise_for_status()  # Raise an error for bad response status
-        
-        file_info = response.json()['result']  # Extract the result containing file information
-        file_path = file_info['file_path']  # Get the file_path from the file information
-        
-        # Construct the URL for downloading the file
-        download_url = f"https://api.telegram.org/file/bot{bot_token}/{file_path}"
-        return download_url
-    
-    except (requests.RequestException, KeyError) as e:
-        raise ValueError(f"Error occurred while getting download URL: {e}")
-
-# Define a few command handlers. These usually take the two arguments update and
-# context.
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
@@ -64,9 +44,11 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle audio messages."""
     try:
+        await update.message.reply_text(f"This message contains a audio, lets save it to gdrive")
         file_id = await get_file_id(update.message)
         download_url = await get_download_url(file_id, context.bot.token)
-        await update.message.reply_text(f"This message contains a audio! You can download it from:\n{download_url}")
+        audio_result = await save_audio(download_url, update.message)
+        await update.message.reply_text(f"Saving audio: {audio_result}")
     
     except ValueError as e:
         await update.message.reply_text(f"Error: {e}")
@@ -77,9 +59,12 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle photo messages."""
     try:
+        await update.message.reply_text(f"This message contains a photo, lets try to detect faces")
         file_id = await get_file_id(update.message)
         download_url = await get_download_url(file_id, context.bot.token)
-        await update.message.reply_text(f"This message contains a photo! You can download it from:\n{download_url}")
+        image_64 = await download_and_encode_to_base64(download_url)
+        faces_result = await detect_faces(image_64, update.message)
+        await update.message.reply_text(f"Face detection: {faces_result}")
     
     except ValueError as e:
         await update.message.reply_text(f"Error: {e}")
