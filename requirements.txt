@@ -5,3 +5,4 @@ ipython==8.23.0
 black==24.4.1
 telegram
 python-telegram-bot
+requests
