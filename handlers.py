@@ -1,3 +1,4 @@
+import json
 from telegram import ForceReply, Update
 from telegram.ext import ContextTypes
 from telegram import Message
@@ -5,8 +6,9 @@ from data_processing import (
     get_download_url,
     download_and_encode_to_base64,
     detect_faces,
-    save_audio
+    save_audio,
 )
+
 
 async def get_file_id(message: Message) -> str:
     """Get the file ID from a Telegram message."""
@@ -21,6 +23,7 @@ async def get_file_id(message: Message) -> str:
         return message.photo[-1].file_id
     else:
         raise ValueError("Message does not contain supported file type")
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
@@ -44,31 +47,37 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle audio messages."""
     try:
-        await update.message.reply_text(f"This message contains a audio, lets save it to gdrive")
+        await update.message.reply_text(
+            f"This message contains a audio, lets save it to gdrive"
+        )
+        metadata_str = json.dumps(update.message.to_dict())
+        await update.message.reply_text(metadata_str)
+
         file_id = await get_file_id(update.message)
         download_url = await get_download_url(file_id, context.bot.token)
-        audio_result = await save_audio(download_url, update.message)
+        audio_result = await save_audio(download_url, metadata_str)
         await update.message.reply_text(f"Saving audio: {audio_result}")
-    
+
     except ValueError as e:
         await update.message.reply_text(f"Error: {e}")
-
-
 
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle photo messages."""
     try:
-        await update.message.reply_text(f"This message contains a photo, lets try to detect faces")
+        await update.message.reply_text(
+            f"This message contains a photo, lets try to detect faces"
+        )
+        metadata_str = json.dumps(update.message.to_dict())
+        await update.message.reply_text(metadata_str)
         file_id = await get_file_id(update.message)
         download_url = await get_download_url(file_id, context.bot.token)
         image_64 = await download_and_encode_to_base64(download_url)
-        faces_result = await detect_faces(image_64, update.message)
+        faces_result = await detect_faces(image_64, metadata_str)
         await update.message.reply_text(f"Face detection: {faces_result}")
-    
+
     except ValueError as e:
         await update.message.reply_text(f"Error: {e}")
-
 
 
 async def meta_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -78,6 +87,8 @@ async def meta_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def handle_files(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle files."""
+    await update.message.reply_text(update.message)
+
     document = update.message.document
     mime_type = document.mime_type
     if mime_type.startswith("image/"):
