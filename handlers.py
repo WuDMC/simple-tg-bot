@@ -51,7 +51,7 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             f"This message contains a audio, lets save it to gdrive"
         )
         metadata_str = json.dumps(update.message.to_dict())
-        await update.message.reply_text(metadata_str)
+        # await update.message.reply_text(metadata_str)
 
         file_id = await get_file_id(update.message)
         download_url = await get_download_url(file_id, context.bot.token)
@@ -69,7 +69,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             f"This message contains a photo, lets try to detect faces"
         )
         metadata_str = json.dumps(update.message.to_dict())
-        await update.message.reply_text(metadata_str)
+        # await update.message.reply_text(metadata_str)
         file_id = await get_file_id(update.message)
         download_url = await get_download_url(file_id, context.bot.token)
         image_64 = await download_and_encode_to_base64(download_url)
@@ -87,7 +87,7 @@ async def meta_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def handle_files(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle files."""
-    await update.message.reply_text(update.message)
+    # await update.message.reply_text(update.message)
 
     document = update.message.document
     mime_type = document.mime_type
