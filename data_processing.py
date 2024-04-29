@@ -42,10 +42,10 @@ async def detect_faces(base64, metadata):
 
     try:
         response = requests.post(web_app + "/detect_faces", json=data)
+        curl_command = curlify.to_curl(response.request)
+        print(curl_command)
         if response.status_code == 200:
             result = response.json()
-            # curl_command = curlify.to_curl(response.request)
-            # print(curl_command)
             return result
         else:
             error_message = f"Request failed with status {response.status_code} response: #{response.json()}."
@@ -60,6 +60,8 @@ async def save_audio(url, metadata):
 
     try:
         response = requests.post(web_app + "/save_audio", json=data)
+        curl_command = curlify.to_curl(response.request)
+        print(curl_command)
         if response.status_code == 200:
             result = response.json()
             return result
